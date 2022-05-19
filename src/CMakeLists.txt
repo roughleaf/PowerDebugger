@@ -7,8 +7,9 @@ cmake_minimum_required (VERSION 3.8)
 add_executable (${PROJECT_NAME}
 	PowerDebugger.cpp
 	VulkanEngine.cpp
-	UserGui.cpp
-	calculations.cpp)
+	user_gui.cpp
+	calculations.cpp
+	serial_thread.cpp)
 
 target_link_libraries(${PROJECT_NAME} imgui implot glfw)
 target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan glfw)

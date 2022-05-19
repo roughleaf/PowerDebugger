@@ -1,5 +1,5 @@
 #include "VulkanEngine.h"
-#include "UserGui.h"
+#include "user_gui.h"
 
 // Statics
 VkAllocationCallbacks* VulkanEngine::g_Allocator = NULL;
@@ -295,10 +295,32 @@ int VulkanEngine::Init(void)
     return 0;
 }
 
-void VulkanEngine::RunLoop(void* args)
+void VulkanEngine::RunLoop(std::shared_ptr<Args> args)
 {
+    std::shared_ptr<ConfigData> configData = std::make_shared<ConfigData>();
+    configData->portIsOpen = false;
+    configData->selectedPort = 0;
+    configData->serialPortList.clear();
+    configData->serialPortListFull.clear();
+
+    std::vector<int> portList = args->serialPort.GetAvailablePorts();
+    int numberOfPorts = portList.size();
+    for (int i = 0; i < numberOfPorts; i++)
+    {
+        std::string FullPortString = "\\\\.\\COM";
+        std::string PartialPortString = "COM";
+        FullPortString += std::to_string(portList[i]);
+        PartialPortString += std::to_string(portList[i]);
+        configData->serialPortList.push_back(PartialPortString);
+        configData->serialPortListFull.push_back(FullPortString);
+
+        configData->comboPortItems[i] = new(char[15]);
+        strcpy_s(configData->comboPortItems[i], 15, configData->serialPortList[i].c_str());
+    }
+
+
     // Our state
-    bool show_demo_window = true;
+    bool show_demo_window = false;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -335,30 +357,30 @@ void VulkanEngine::RunLoop(void* args)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        UserGui::ShowConfigurationWindow(args);
+        UserGui::ShowConfigurationWindow(args, configData);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
+        //{
+        //    static float f = 0.0f;
+        //    static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+        //    ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+        //    ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        //    ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+        //    ImGui::Checkbox("Another Window", &show_another_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+        //    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        //    ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+        //    if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+        //        counter++;
+        //    ImGui::SameLine();
+        //    ImGui::Text("counter = %d", counter);
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
+        //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        //    ImGui::End();
+        //}
 
         // 3. Show another simple window.
         if (show_another_window)
@@ -392,6 +414,13 @@ void VulkanEngine::RunLoop(void* args)
         // Present Main Platform Window
         if (!main_is_minimized)
             FramePresent(wd);
+    }
+
+    // Must remember to clean up com list else MEMORY LEAK
+    // Program will exit here and OS should clean up the memory, but i's bad and lazy practice
+    for (int i = 0; i < numberOfPorts; i++)
+    {
+        delete configData->comboPortItems[i];
     }
 }
 

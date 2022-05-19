@@ -104,7 +104,7 @@ int SerialPort::WriteByte(char toWrite)
     return -1;
 }
 
-RawData_s SerialPort::GetRawData()
+RawData SerialPort::GetRawData()
 {
     if (!_portIsOpen)
         return _rawData;
