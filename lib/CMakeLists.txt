@@ -15,6 +15,7 @@ target_sources(imgui PRIVATE
 add_library(implot STATIC)
 target_include_directories(implot PUBLIC implot)
 target_sources(implot PRIVATE
+    implot/implot.cpp
     implot/implot_demo.cpp
     implot/implot_items.cpp
 )

@@ -1,9 +1,12 @@
 #include "serial_thread.h"
 #include "datatypes.h"
 #include "calculations.h"
+#include "imgui.h"
 
 void SerialLoop(std::shared_ptr<Args> args, std::shared_ptr<bool> enableLoop)
 {
+    static float t = 0;
+
     args->calabrationData.PrimaryV_M = 0.0116069;    // Got value from maual calibarion procedure. TODO Create calibration module
     args->calabrationData.PrimaryV_B = -1.15805;
     args->calabrationData.PrimaryI75R_M = 0.52;      // Result in uA
@@ -65,5 +68,34 @@ void SerialLoop(std::shared_ptr<Args> args, std::shared_ptr<bool> enableLoop)
         default:
             break;
         }
+
+        if (args->plotData.primaryVoltage.size() > (args->plotData.history*1000))
+        {
+            args->plotData.primaryVoltage.erase(args->plotData.primaryVoltage.begin(),
+                args->plotData.primaryVoltage.begin() + (args->plotData.primaryVoltage.size() - (args->plotData.history * 1000)));
+        }
+        args->plotData.primaryVoltage.push_back(args->calculatedValues.PrimaryV);
+
+        if (args->plotData.primaryCurrent.size() > (args->plotData.history * 1000))
+        {
+            args->plotData.primaryCurrent.erase(args->plotData.primaryCurrent.begin(),
+                args->plotData.primaryCurrent.begin() + (args->plotData.primaryCurrent.size() - (args->plotData.history * 1000)));
+        }
+        args->plotData.primaryCurrent.push_back(args->calculatedValues.PrimaryI * 0.05);
+
+        if (args->plotData.primaryPower.size() > (args->plotData.history * 1000))
+        {
+            args->plotData.primaryPower.erase(args->plotData.primaryPower.begin(),
+                args->plotData.primaryPower.begin() + (args->plotData.primaryPower.size() - (args->plotData.history * 1000)));
+        }
+        args->plotData.primaryPower.push_back(args->calculatedValues.PrimaryV * args->calculatedValues.PrimaryI * 0.01);
+
+        /*args->plotData.primaryVoltage.AddPoint(t, args->calculatedValues.PrimaryV);
+        args->plotData.primaryCurrent.AddPoint(t, args->calculatedValues.PrimaryI);
+        args->plotData.primaryPower.AddPoint(t, (args->calculatedValues.PrimaryV * args->calculatedValues.PrimaryI));
+
+        args->plotData.auxVoltage.AddPoint(t, args->calculatedValues.AuxV);
+        args->plotData.auxCurrent.AddPoint(t, args->calculatedValues.AuxI);
+        args->plotData.auxPower.AddPoint(t, (args->calculatedValues.AuxV * args->calculatedValues.AuxI));*/
 	}
 }
