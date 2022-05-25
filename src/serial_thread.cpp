@@ -81,14 +81,14 @@ void SerialLoop(std::shared_ptr<Args> args, std::shared_ptr<bool> enableLoop)
             args->plotData.primaryCurrent.erase(args->plotData.primaryCurrent.begin(),
                 args->plotData.primaryCurrent.begin() + (args->plotData.primaryCurrent.size() - (args->plotData.history * 1000)));
         }
-        args->plotData.primaryCurrent.push_back(args->calculatedValues.PrimaryI * 0.05);
+        args->plotData.primaryCurrent.push_back(args->calculatedValues.PrimaryI * 0.000001);
 
         if (args->plotData.primaryPower.size() > (args->plotData.history * 1000))
         {
             args->plotData.primaryPower.erase(args->plotData.primaryPower.begin(),
                 args->plotData.primaryPower.begin() + (args->plotData.primaryPower.size() - (args->plotData.history * 1000)));
         }
-        args->plotData.primaryPower.push_back(args->calculatedValues.PrimaryV * args->calculatedValues.PrimaryI * 0.01);
+        args->plotData.primaryPower.push_back(args->calculatedValues.PrimaryV * args->calculatedValues.PrimaryI * 0.000001);
 
         /*args->plotData.primaryVoltage.AddPoint(t, args->calculatedValues.PrimaryV);
         args->plotData.primaryCurrent.AddPoint(t, args->calculatedValues.PrimaryI);

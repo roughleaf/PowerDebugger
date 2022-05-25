@@ -183,7 +183,7 @@ int VulkanEngine::Init(void)
         return 1;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+Vulkan example", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "RoughLeaf Power Debugger", NULL, NULL);
 
     // Setup Vulkan
     if (!glfwVulkanSupported())
@@ -321,7 +321,7 @@ void VulkanEngine::RunLoop(std::shared_ptr<Args> args)
 
 
     // Our state
-    bool show_demo_window = false;
+    bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
