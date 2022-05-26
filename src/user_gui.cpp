@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 
+// Copied from implot_demo.cpp. Credit to original author
 void MetricFormatter(double value, char* buff, int size, void* data) {
     const char* unit = (const char*)data;
     static double v[] = { 1000000000,1000000,1000,1,0.001,0.000001,0.000000001 };
