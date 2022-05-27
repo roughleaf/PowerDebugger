@@ -14,7 +14,7 @@ int main(int, char**)
     std::shared_ptr<Args> args = std::make_shared<Args>();
     std::shared_ptr<bool> enableSerialLoop = std::make_shared<bool>(true);
 
-    args->plotData.history = 2.0f;
+    args->plotData.history = 3.0f;
 
     vk.Init();
 

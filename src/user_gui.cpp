@@ -9,6 +9,9 @@
 #include <time.h>
 #include <vector>
 #include <algorithm>
+#include "imgui_impl_glfw.h"
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 // Copied from implot_demo.cpp. Credit to original author
 void MetricFormatter(double value, char* buff, int size, void* data) {
@@ -30,63 +33,14 @@ void MetricFormatter(double value, char* buff, int size, void* data) {
 
 namespace UserGui
 {
-    void ShowConfigurationWindow(std::shared_ptr<Args> args, std::shared_ptr<ConfigData> canfigData)
+    void ShowUserWindow(GLFWwindow *window ,std::shared_ptr<Args> args, std::shared_ptr<ConfigData> configData)
     {
+        ShowConfigurationWindow(args, configData);
+        ShowPlotWindow(args);
+    }
 
-        ImGui::Begin("Plot Tests", nullptr, ImGuiWindowFlags_NoCollapse);
-
-        ImGui::SliderFloat("History", &args->plotData.history, 1, 3, "%.1f s");
-
-
-        static bool y1_axis = true;
-        static bool y2_axis = true;
-        static bool y3_axis = true;
-
-        ImGui::Checkbox("Primary Voltage", &y1_axis);
-        ImGui::SameLine();
-        ImGui::Checkbox("Primary Current", &y2_axis);
-        ImGui::SameLine();
-        ImGui::Checkbox("Primary Power", &y3_axis);
-
-        if (ImPlot::BeginPlot("Primary Channel", ImVec2(-1, 600), ImPlotFlags_Crosshairs | ImPlotFlags_AntiAliased))
-        {
-            ImPlot::SetupAxes("ms", "Y-Axis 1", ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LockMax, 0);
-            ImPlot::SetupAxesLimits(0, args->plotData.history * 1000 - 1, 0, ImGuiCond_Always);
-            if (y1_axis) {
-                ImPlot::SetupAxis(ImAxis_Y1, "Voltage", ImPlotAxisFlags_None);
-                ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 6);
-                ImPlot::SetupAxisFormat(ImAxis_Y1, MetricFormatter, (void*)"V");
-            }
-            if (y2_axis) {
-                ImPlot::SetupAxis(ImAxis_Y2, "Current", ImPlotAxisFlags_AuxDefault);
-                ImPlot::SetupAxisLimits(ImAxis_Y2, 0, 0.001);
-                ImPlot::SetupAxisFormat(ImAxis_Y2, MetricFormatter, (void*)"A");
-            }
-            if (y3_axis) {
-                ImPlot::SetupAxis(ImAxis_Y3, "Power", ImPlotAxisFlags_AuxDefault);
-                ImPlot::SetupAxisLimits(ImAxis_Y3, 0, 0.002);
-                ImPlot::SetupAxisFormat(ImAxis_Y3, MetricFormatter, (void*)"W");
-            }
-
-            if (y1_axis) {
-                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
-                ImPlot::PlotLine("Voltage", args->plotData.primaryVoltage.data(), args->plotData.history * 1000, 1, 0, 0);
-            }
-            if (y2_axis) {
-                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
-                ImPlot::PlotLine("Current", args->plotData.primaryCurrent.data(), args->plotData.history * 1000, 1, 0, 0);
-            }
-            if (y3_axis) {
-                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y3);
-                ImPlot::PlotLine("Power", args->plotData.primaryPower.data(), args->plotData.history * 1000, 1, 0, 0);
-            }
-            ImPlot::EndPlot();
-        }
-
-
-
-        ImGui::End();
-
+    void ShowConfigurationWindow(std::shared_ptr<Args> args, std::shared_ptr<ConfigData> configData)
+    {
         ImVec2 btnSize{ 100,20 };
         ImVec4 btnGreenOn{ 0, 0.65f, 0, 1 };
         ImVec4 btnGreenOnActive{ 0, 0.45f, 0, 1 };
@@ -105,18 +59,18 @@ namespace UserGui
         {
             ImPlot::ShowDemoWindow();
         }
-        ImGui::BeginDisabled(canfigData->portIsOpen);
+        ImGui::BeginDisabled(configData->portIsOpen);
         ImGui::SetNextItemWidth(150);
-        ImGui::Combo(" ", &canfigData->selectedPort, canfigData->comboPortItems, canfigData->serialPortList.size());
+        ImGui::Combo(" ", &configData->selectedPort, configData->comboPortItems, configData->serialPortList.size());
         ImGui::EndDisabled();
         //ImGui::SameLine();
-        if (!canfigData->portIsOpen)
+        if (!configData->portIsOpen)
         {
             if (ImGui::Button("Open Port", ImVec2(150, 20)))
             {
-                if (args->serialPort.OpenPort(canfigData->serialPortListFull[canfigData->selectedPort].c_str()))
+                if (args->serialPort.OpenPort(configData->serialPortListFull[configData->selectedPort].c_str()))
                 {
-                    canfigData->portIsOpen = true;
+                    configData->portIsOpen = true;
                 }
             }
         }
@@ -126,7 +80,7 @@ namespace UserGui
             {
                 if (args->serialPort.ClosePort())
                 {
-                    canfigData->portIsOpen = false;
+                    configData->portIsOpen = false;
                 }
             }
 
@@ -286,7 +240,55 @@ namespace UserGui
         }
 
         ImGui::End();
-    }
+    } // ShowShuntDebugWindow Method
+
+    void ShowPlotWindow(std::shared_ptr<Args> args)
+    {
+        ImGui::Begin("Primary Channel", nullptr, ImGuiWindowFlags_NoCollapse);
+
+        // ImGui::SliderFloat("History", &args->plotData.history, 1, 3, "%.1f s");
+
+        ImGui::BeginDisabled();
+        ImGui::RadioButton("Primary 75R", &args->rawData.PrimaryShunts, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Primary 10R", &args->rawData.PrimaryShunts, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton("Primary 1R", &args->rawData.PrimaryShunts, 2);
+        ImGui::SameLine();
+        ImGui::RadioButton("Primary Bypass", &args->rawData.PrimaryShunts, 3);
+        ImGui::EndDisabled();
+
+        if (ImPlot::BeginPlot("Primary Channel", ImVec2(-1, 600), ImPlotFlags_Crosshairs | ImPlotFlags_AntiAliased))
+        {
+            ImPlot::SetupAxes("ms", "Y-Axis 1", ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LockMax, 0);
+            ImPlot::SetupAxesLimits(0, args->plotData.history * 1000 - 1, 0, ImGuiCond_Always);
+
+            ImPlot::SetupAxis(ImAxis_Y1, "Voltage", ImPlotAxisFlags_None);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 6);
+            ImPlot::SetupAxisFormat(ImAxis_Y1, MetricFormatter, (void*)"V");
+
+            ImPlot::SetupAxis(ImAxis_Y2, "Current", ImPlotAxisFlags_AuxDefault);
+            ImPlot::SetupAxisLimits(ImAxis_Y2, 0, 0.001);
+            ImPlot::SetupAxisFormat(ImAxis_Y2, MetricFormatter, (void*)"A");
+
+            ImPlot::SetupAxis(ImAxis_Y3, "Power", ImPlotAxisFlags_AuxDefault);
+            ImPlot::SetupAxisLimits(ImAxis_Y3, 0, 0.002);
+            ImPlot::SetupAxisFormat(ImAxis_Y3, MetricFormatter, (void*)"W");
+
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+            ImPlot::PlotLine("Voltage", args->plotData.primaryVoltage.data(), args->plotData.history * 1000, 1, 0, 0);
+
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+            ImPlot::PlotLine("Current", args->plotData.primaryCurrent.data(), args->plotData.history * 1000, 1, 0, 0);
+
+            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y3);
+            ImPlot::PlotLine("Power", args->plotData.primaryPower.data(), args->plotData.history * 1000, 1, 0, 0);
+
+            ImPlot::EndPlot();
+        }
+
+        ImGui::End();
+    } // ShowPlotWindow Method
 
     bool CustomColorButton(const char* label, ImVec4 default, ImVec4 active, ImVec4 hover)
     {

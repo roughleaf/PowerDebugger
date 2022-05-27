@@ -183,7 +183,7 @@ int VulkanEngine::Init(void)
         return 1;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(1280, 720, "RoughLeaf Power Debugger", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "RoughLeaf Power Debugger", NULL, NULL);
 
     // Setup Vulkan
     if (!glfwVulkanSupported())
@@ -321,7 +321,7 @@ void VulkanEngine::RunLoop(std::shared_ptr<Args> args)
 
 
     // Our state
-    bool show_demo_window = true;
+    bool show_demo_window = false;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -358,7 +358,8 @@ void VulkanEngine::RunLoop(std::shared_ptr<Args> args)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        UserGui::ShowConfigurationWindow(args, configData);
+        UserGui::ShowUserWindow(window, args, configData);
+        //UserGui::ShowConfigurationWindow(args, configData);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         //{
