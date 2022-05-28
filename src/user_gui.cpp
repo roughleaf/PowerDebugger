@@ -35,8 +35,11 @@ namespace UserGui
 {
     void ShowUserWindow(GLFWwindow *window ,std::shared_ptr<Args> args, std::shared_ptr<ConfigData> configData)
     {
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
         ShowConfigurationWindow(args, configData);
-        ShowPlotWindow(args);
+        ShowPlotWindow(args, configData);
+        
     }
 
     void ShowConfigurationWindow(std::shared_ptr<Args> args, std::shared_ptr<ConfigData> configData)
@@ -60,13 +63,13 @@ namespace UserGui
             ImPlot::ShowDemoWindow();
         }
         ImGui::BeginDisabled(configData->portIsOpen);
-        ImGui::SetNextItemWidth(150);
+        ImGui::SetNextItemWidth(200);
         ImGui::Combo(" ", &configData->selectedPort, configData->comboPortItems, configData->serialPortList.size());
         ImGui::EndDisabled();
         //ImGui::SameLine();
         if (!configData->portIsOpen)
         {
-            if (ImGui::Button("Open Port", ImVec2(150, 20)))
+            if (ImGui::Button("Open Port", ImVec2(200, 20)))
             {
                 if (args->serialPort.OpenPort(configData->serialPortListFull[configData->selectedPort].c_str()))
                 {
@@ -76,7 +79,7 @@ namespace UserGui
         }
         else
         {
-            if (ImGui::Button("Close Port", ImVec2(150, 20)))
+            if (ImGui::Button("Close Port", ImVec2(200, 20)))
             {
                 if (args->serialPort.ClosePort())
                 {
@@ -86,8 +89,8 @@ namespace UserGui
 
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
             window_flags |= ImGuiWindowFlags_MenuBar;
-            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-            ImGui::BeginChild("Primary", ImVec2(200, 350), true, window_flags);
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
+            ImGui::BeginChild("Primary", ImVec2(200, 310), true, window_flags);
 
             // Primary On button group
             if (!args->rawData.PrimaryOn)
@@ -150,7 +153,7 @@ namespace UserGui
 
 
             // Aux Groupings
-            ImGui::BeginChild("Aux", ImVec2(200, 250), true, window_flags);
+            ImGui::BeginChild("Aux", ImVec2(200, 130), true, window_flags);
 
             if (!args->rawData.AuxOn)
             {
@@ -173,24 +176,30 @@ namespace UserGui
             ImGui::Text("Aux I:     %2.2fuA", args->calculatedValues.AuxI);
             ImGui::EndChild();
 
-            if (ImGui::Checkbox("Enable Debug", &args->rawData.DebugMode))
-            {
-                switch (args->rawData.DebugMode)
-                {
-                case true:
-                    args->serialPort.AddCharToTxQueue('n');
-                    break;
-                case false:
-                    args->serialPort.AddCharToTxQueue('m');
-                    break;
-                default:
-                    break;
-                }
-            }
+            // Added this to easily enable and disable the debug checkbox in code
+            bool enableDebugCheckbox = false;
 
-            if (args->rawData.DebugMode)
+            if (enableDebugCheckbox)
             {
-                ShowShuntDebugWindow(args);
+                if (ImGui::Checkbox("Enable Debug", &args->rawData.DebugMode))
+                {
+                    switch (args->rawData.DebugMode)
+                    {
+                    case true:
+                        args->serialPort.AddCharToTxQueue('n');
+                        break;
+                    case false:
+                        args->serialPort.AddCharToTxQueue('m');
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                if (args->rawData.DebugMode)
+                {
+                    ShowShuntDebugWindow(args);
+                }
             }
 
             ImGui::PopStyleVar();
@@ -242,25 +251,124 @@ namespace UserGui
         ImGui::End();
     } // ShowShuntDebugWindow Method
 
-    void ShowPlotWindow(std::shared_ptr<Args> args)
+    void ShowPlotWindow(std::shared_ptr<Args> args, std::shared_ptr<ConfigData> configData)
     {
         ImGui::Begin("Primary Channel", nullptr, ImGuiWindowFlags_NoCollapse);
+
+        ImVec2 btnSize{ 100,20 };
+        ImVec4 btnGreenOn{ 0, 0.65f, 0, 1 };
+        ImVec4 btnGreenOnActive{ 0, 0.45f, 0, 1 };
+        ImVec4 btnGreenOnHover{ 0, 0.55f, 0, 1 };
+
+        ImVec4 btnRedOff{ 0.3f, 0, 0, 1 };
+        ImVec4 btnRedOffActive{ 0.2f, 0, 0, 1 };
+        ImVec4 btnRedOffHover{ 0.15f, 0, 0, 1 };
+
+        ImVec2 wsize = ImGui::GetWindowSize();
+        wsize.x = -1;
+        wsize.y -= 200;
+
+        static bool dataHold = false;
+        static bool enablePrimaryPlots = true;
+        static bool enableAuxPlots = false;
+        static PlotData plotBuffer{};
+
+        float minPower{};
+        float maxPower{};
+        float minCurrent{};
+        float maxCurrent{};
+
+        static int minMaxDisplay = 0;
+
+        if (!dataHold)
+        {
+            plotBuffer = args->plotData;
+        }
+
+        switch(minMaxDisplay)
+        {
+        case 0:
+            if (!plotBuffer.primaryPower.empty())
+            {
+                minPower = *std::min_element(plotBuffer.primaryPower.begin(), plotBuffer.primaryPower.end()) * 1000;
+                maxPower = *std::max_element(plotBuffer.primaryPower.begin(), plotBuffer.primaryPower.end()) * 1000;
+            }
+            if (!plotBuffer.primaryCurrent.empty())
+            {
+                minCurrent = *std::min_element(plotBuffer.primaryCurrent.begin(), plotBuffer.primaryCurrent.end()) * 1000;
+                maxCurrent = *std::max_element(plotBuffer.primaryCurrent.begin(), plotBuffer.primaryCurrent.end()) * 1000;
+            }
+            break;
+        case 1:
+            if (!plotBuffer.auxPower.empty())
+            {
+                minPower = *std::min_element(plotBuffer.auxPower.begin(), plotBuffer.auxPower.end()) * 1000;
+                maxPower = *std::max_element(plotBuffer.auxPower.begin(), plotBuffer.auxPower.end()) * 1000;
+            }
+            if (!plotBuffer.auxCurrent.empty())
+            {
+                minCurrent = *std::min_element(plotBuffer.auxCurrent.begin(), plotBuffer.auxCurrent.end()) * 1000;
+                maxCurrent = *std::max_element(plotBuffer.auxCurrent.begin(), plotBuffer.auxCurrent.end()) * 1000;
+            }
+            break;
+
+        }
 
         // ImGui::SliderFloat("History", &args->plotData.history, 1, 3, "%.1f s");
 
         ImGui::BeginDisabled();
+        ImGui::BeginTable("Shunt Info", 4);
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
         ImGui::RadioButton("Primary 75R", &args->rawData.PrimaryShunts, 0);
-        ImGui::SameLine();
+        ImGui::TableNextColumn();
         ImGui::RadioButton("Primary 10R", &args->rawData.PrimaryShunts, 1);
-        ImGui::SameLine();
+        ImGui::TableNextColumn();
         ImGui::RadioButton("Primary 1R", &args->rawData.PrimaryShunts, 2);
-        ImGui::SameLine();
+        ImGui::TableNextColumn();
         ImGui::RadioButton("Primary Bypass", &args->rawData.PrimaryShunts, 3);
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::RadioButton("Aux 75R", &args->rawData.AuxShunts, 0);
+        ImGui::TableNextColumn();
+        ImGui::RadioButton("Aux 10R", &args->rawData.AuxShunts, 1);
+        ImGui::TableNextColumn();
+        ImGui::RadioButton("Aux 1R", &args->rawData.AuxShunts, 2);
+        ImGui::TableNextColumn();
+        ImGui::RadioButton("Aux Bypass", &args->rawData.AuxShunts, 3);
+
+        ImGui::EndTable();
         ImGui::EndDisabled();
 
-        if (ImPlot::BeginPlot("Primary Channel", ImVec2(-1, 600), ImPlotFlags_Crosshairs | ImPlotFlags_AntiAliased))
+        ImGui::Separator();
+
+        // Table to display the minimum and maximums
+        ImGui::BeginTable("Info", 3);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Maximum Currrent: % 2.2fmA", maxCurrent);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("Maximum Power   : % 2.2fmW", maxPower);
+        ImGui::TableSetColumnIndex(2);
+        ImGui::RadioButton("Primary Channel", &minMaxDisplay, 0);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Minimum Current : % 2.2fmA", minCurrent);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("Minimum Power   : % 2.2fmW", minPower);
+        ImGui::TableSetColumnIndex(2);
+        ImGui::RadioButton("Aux Channel", &minMaxDisplay, 1);
+        ImGui::EndTable();
+
+        ImGui::Separator();
+
+        ImGui::Checkbox("Enable Primary Plots", &enablePrimaryPlots);
+        ImGui::SameLine();
+        ImGui::Checkbox("Enable Aux Plots", &enableAuxPlots);
+
+        if (ImPlot::BeginPlot("Primary Channel", wsize, ImPlotFlags_Crosshairs | ImPlotFlags_AntiAliased))
         {
-            ImPlot::SetupAxes("ms", "Y-Axis 1", ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LockMax, 0);
+            ImPlot::SetupAxes("ms", "Y-Axis 1", ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LockMax | ImPlotAxisFlags_NoGridLines, 0);
             ImPlot::SetupAxesLimits(0, args->plotData.history * 1000 - 1, 0, ImGuiCond_Always);
 
             ImPlot::SetupAxis(ImAxis_Y1, "Voltage", ImPlotAxisFlags_None);
@@ -275,17 +383,34 @@ namespace UserGui
             ImPlot::SetupAxisLimits(ImAxis_Y3, 0, 0.002);
             ImPlot::SetupAxisFormat(ImAxis_Y3, MetricFormatter, (void*)"W");
 
-            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
-            ImPlot::PlotLine("Voltage", args->plotData.primaryVoltage.data(), args->plotData.history * 1000, 1, 0, 0);
+            if (configData->portIsOpen && enablePrimaryPlots)
+            {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+                ImPlot::PlotLine("Primary Voltage", plotBuffer.primaryVoltage.data(), plotBuffer.history * 1000, 1, 0, 0);
 
-            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
-            ImPlot::PlotLine("Current", args->plotData.primaryCurrent.data(), args->plotData.history * 1000, 1, 0, 0);
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+                ImPlot::PlotLine("Primary Current", plotBuffer.primaryCurrent.data(), plotBuffer.history * 1000, 1, 0, 0);
 
-            ImPlot::SetAxes(ImAxis_X1, ImAxis_Y3);
-            ImPlot::PlotLine("Power", args->plotData.primaryPower.data(), args->plotData.history * 1000, 1, 0, 0);
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y3);
+                ImPlot::PlotLine("Primary Power", plotBuffer.primaryPower.data(), plotBuffer.history * 1000, 1, 0, 0);
+            }
+
+            if (configData->portIsOpen && enableAuxPlots)
+            {
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+                ImPlot::PlotLine("Aux Voltage", plotBuffer.auxVoltage.data(), plotBuffer.history * 1000, 1, 0, 0);
+
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+                ImPlot::PlotLine("Aux Current", plotBuffer.auxCurrent.data(), plotBuffer.history * 1000, 1, 0, 0);
+
+                ImPlot::SetAxes(ImAxis_X1, ImAxis_Y3);
+                ImPlot::PlotLine("Aux Power", plotBuffer.auxPower.data(), plotBuffer.history * 1000, 1, 0, 0);
+            }
 
             ImPlot::EndPlot();
         }
+
+        ImGui::Checkbox("Hold Data", &dataHold);
 
         ImGui::End();
     } // ShowPlotWindow Method

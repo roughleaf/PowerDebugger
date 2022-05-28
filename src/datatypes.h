@@ -36,47 +36,8 @@ struct CalculatedValues
 	float AuxI;
 };
 
-// Helper struct to add datapoints to graph
-// Copied and slightly modified from ScrollingBuffer in implot_demo.cpp
-struct PlotBuffer 
-{
-	int MaxSize;
-	int Offset;
-	ImVector<ImVec2> Data;
-	PlotBuffer(int max_size = 2000)
-	{
-		MaxSize = max_size;
-		Offset = 0;
-		Data.reserve(MaxSize);
-	}
-	void AddPoint(float x, float y)
-	{
-		if (Data.size() < MaxSize)
-			Data.push_back(ImVec2(x, y));
-		else
-		{
-			Data[Offset] = ImVec2(x, y);
-			Offset = (Offset + 1) % MaxSize;
-		}
-	}
-	void Erase()
-	{
-		if (Data.size() > 0)
-		{
-			Data.shrink(0);
-			Offset = 0;
-		}
-	}
-};
-
 struct PlotData
 {
-	/*PlotBuffer primaryVoltage;
-	PlotBuffer primaryCurrent;
-	PlotBuffer primaryPower;
-	PlotBuffer auxVoltage;
-	PlotBuffer auxCurrent;
-	PlotBuffer auxPower;*/
 	std::vector<float> primaryVoltage;
 	std::vector<float> primaryCurrent;
 	std::vector<float> primaryPower;
@@ -85,8 +46,6 @@ struct PlotData
 	std::vector<float> auxPower;
 
 	float history;
-
-	float t;
 };
 
 struct Args

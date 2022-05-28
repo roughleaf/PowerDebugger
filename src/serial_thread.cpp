@@ -69,6 +69,7 @@ void SerialLoop(std::shared_ptr<Args> args, std::shared_ptr<bool> enableLoop)
             break;
         }
 
+        // Get the data to be plotted for the primary channel
         if (args->plotData.primaryVoltage.size() > (args->plotData.history*1000))
         {
             args->plotData.primaryVoltage.erase(args->plotData.primaryVoltage.begin(),
@@ -90,12 +91,26 @@ void SerialLoop(std::shared_ptr<Args> args, std::shared_ptr<bool> enableLoop)
         }
         args->plotData.primaryPower.push_back(args->calculatedValues.PrimaryV * args->calculatedValues.PrimaryI * 0.000001);
 
-        /*args->plotData.primaryVoltage.AddPoint(t, args->calculatedValues.PrimaryV);
-        args->plotData.primaryCurrent.AddPoint(t, args->calculatedValues.PrimaryI);
-        args->plotData.primaryPower.AddPoint(t, (args->calculatedValues.PrimaryV * args->calculatedValues.PrimaryI));
+        // Get the data to be plotted for the aux channel
+        if (args->plotData.auxVoltage.size() > (args->plotData.history * 1000))
+        {
+            args->plotData.auxVoltage.erase(args->plotData.auxVoltage.begin(),
+                args->plotData.auxVoltage.begin() + (args->plotData.auxVoltage.size() - (args->plotData.history * 1000)));
+        }
+        args->plotData.auxVoltage.push_back(args->calculatedValues.AuxV);
 
-        args->plotData.auxVoltage.AddPoint(t, args->calculatedValues.AuxV);
-        args->plotData.auxCurrent.AddPoint(t, args->calculatedValues.AuxI);
-        args->plotData.auxPower.AddPoint(t, (args->calculatedValues.AuxV * args->calculatedValues.AuxI));*/
+        if (args->plotData.auxCurrent.size() > (args->plotData.history * 1000))
+        {
+            args->plotData.auxCurrent.erase(args->plotData.auxCurrent.begin(),
+                args->plotData.auxCurrent.begin() + (args->plotData.auxCurrent.size() - (args->plotData.history * 1000)));
+        }
+        args->plotData.auxCurrent.push_back(args->calculatedValues.AuxI * 0.000001);
+
+        if (args->plotData.auxPower.size() > (args->plotData.history * 1000))
+        {
+            args->plotData.auxPower.erase(args->plotData.auxPower.begin(),
+                args->plotData.auxPower.begin() + (args->plotData.auxPower.size() - (args->plotData.history * 1000)));
+        }
+        args->plotData.auxPower.push_back(args->calculatedValues.AuxV * args->calculatedValues.AuxI * 0.000001);
 	}
 }
