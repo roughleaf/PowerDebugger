@@ -183,7 +183,7 @@ int VulkanEngine::Init(void)
         return 1;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(800, 600, "RoughLeaf Power Debugger", NULL, NULL);
+    window = glfwCreateWindow(741, 494, "RoughLeaf Power Debugger", NULL, NULL);
 
     // Setup Vulkan
     if (!glfwVulkanSupported())

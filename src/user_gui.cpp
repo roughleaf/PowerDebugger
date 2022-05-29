@@ -56,7 +56,7 @@ namespace UserGui
         static bool plotDemo = false;
 
         ImGui::Begin("Controls");
-        ImGui::Checkbox("Show Plot Demo", &plotDemo);
+        //ImGui::Checkbox("Show Plot Demo", &plotDemo);
 
         if (plotDemo)
         {
